@@ -1,0 +1,74 @@
+{
+  "name": "logwatcher",
+  "displayName": "Log Watcher",
+  "description": "Log Watcher is an extension for VSCode to watch logs and display them in the \"Output\" tab, much like what \"tail -F\" does.",
+  "version": "0.0.1",
+  "keywords": [
+    "logs",
+    "log watcher",
+    "vscode extension"
+  ],
+  "author": "Volodymyr Kolesnykov <volodymyr@wildwolf.name> (https://wildwolf.name/)",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Automattic/vscode-logwatcher"
+  },
+  "bugs": {
+    "url": "https://github.com/Automattic/vscode-logwatcher/issues"
+  },
+  "homepage": "https://github.com/Automattic/vscode-logwatcher",
+  "engines": {
+    "vscode": "^1.78.0",
+    "node": "^16.0.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "logwatcher.watchFile",
+        "title": "Watch File",
+        "category": "Log Watcher"
+      },
+      {
+        "command": "logwatcher.watchNginxAccessLog",
+        "title": "Watch nginx access.log",
+        "category": "Log Watcher"
+      },
+      {
+        "command": "logwatcher.watchNginxErrorLog",
+        "title": "Watch nginx error.log",
+        "category": "Log Watcher"
+      },
+      {
+        "command": "logwatcher.stopWatching",
+        "title": "Stop Watching File…",
+        "category": "Log Watcher"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src --ext ts",
+    "test": "exit 0",
+    "deploy": "vsce publish"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@types/node": "^16.0.0",
+    "@types/vscode": "^1.78.0",
+    "@typescript-eslint/eslint-plugin": "^5.59.1",
+    "@typescript-eslint/parser": "^5.59.1",
+    "@vscode/test-electron": "^2.3.0",
+    "@vscode/vsce": "^2.19.0",
+    "eslint": "^8.39.0",
+    "typescript": "^5.0.4"
+  }
+}
