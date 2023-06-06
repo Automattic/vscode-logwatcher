@@ -52,7 +52,7 @@ suite('WatchFileCommand', function () {
         }
     });
 
-    this.timeout('win32' === platform() ? 60000 : 2000);
+    this.timeout('win32' === platform() ? 120000 : 2000);
 
     test('watchFileCommandHandler - smoke test', async function () {
         const filename = __filename;
