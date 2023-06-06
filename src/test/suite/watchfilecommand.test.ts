@@ -39,8 +39,17 @@ function promisifiedWrite(stream: WriteStream, data: string | Buffer): Promise<v
 }
 
 suite('WatchFileCommand', function () {
-    this.afterEach(function () {
+    let tmpDir: string | null = null;
+
+    this.beforeEach(function () {
+        tmpDir = null;
+    });
+
+    this.afterEach(async function () {
         freeAllResources();
+        if (tmpDir) {
+            await rm(tmpDir, { recursive: true, force: true });
+        }
     });
 
     this.timeout('win32' === platform() ? 60000 : 2000);
@@ -69,129 +78,108 @@ suite('WatchFileCommand', function () {
     });
 
     test('watchFileCommandHandler - react to file creation', async function () {
-        const path = await mkdtemp(join(tmpdir(), 'logwatcher-test-'));
-        const fname = join(path, '0001.txt');
+        tmpDir = await mkdtemp(join(tmpdir(), 'logwatcher-test-'));
+        const fname = join(tmpDir, '0001.txt');
 
-        try {
-            const [editor, emitter] = await Promise.all([
-                waitForOutputWindow(`extension-output-`),
-                commands.executeCommand<EventEmitter>('logwatcher.watchFile', fname),
-            ]);
+        const [editor, emitter] = await Promise.all([
+            waitForOutputWindow(`extension-output-`),
+            commands.executeCommand<EventEmitter>('logwatcher.watchFile', fname),
+        ]);
 
-            notEqual(editor, undefined);
-            notEqual(emitter, undefined);
+        notEqual(editor, undefined);
+        notEqual(emitter, undefined);
 
-            await Promise.all([once(emitter, 'fileCreated'), writeFile(fname, '')]);
-        } finally {
-            await rm(path, { recursive: true, force: true });
-        }
+        await Promise.all([once(emitter, 'fileCreated'), writeFile(fname, '')]);
     });
 
     test('watchFileCommandHandler - react to file modification', async function () {
-        const path = await mkdtemp(join(tmpdir(), 'logwatcher-test-'));
-        const fname = join(path, '0002.txt');
+        tmpDir = await mkdtemp(join(tmpdir(), 'logwatcher-test-'));
+        const fname = join(tmpDir, '0002.txt');
 
         const stream = createWriteStream(fname);
+        const [editor, emitter] = await Promise.all([
+            waitForOutputWindow(`extension-output-`),
+            commands.executeCommand<EventEmitter>('logwatcher.watchFile', fname),
+        ]);
 
-        try {
-            const [editor, emitter] = await Promise.all([
-                waitForOutputWindow(`extension-output-`),
-                commands.executeCommand<EventEmitter>('logwatcher.watchFile', fname),
-            ]);
+        notEqual(editor, undefined);
+        notEqual(emitter, undefined);
 
-            notEqual(editor, undefined);
-            notEqual(emitter, undefined);
+        const expectedContent = `this is a text${EOL}`;
+        await Promise.all([
+            waitForVisibleRangesChange(editor),
+            once(emitter, 'fileChanged'),
+            promisifiedWrite(stream, expectedContent),
+        ]);
 
-            const expectedContent = `this is a text${EOL}`;
-            await Promise.all([
-                waitForVisibleRangesChange(editor),
-                once(emitter, 'fileChanged'),
-                promisifiedWrite(stream, expectedContent),
-            ]);
-
-            const actual = editor.document.getText();
-            equal(actual, expectedContent);
-        } finally {
-            await rm(path, { recursive: true, force: true });
-        }
+        const actual = editor.document.getText();
+        equal(actual, expectedContent);
     });
 
     test('watchFileCommandHandler - react to file removal', async function () {
-        const path = await mkdtemp(join(tmpdir(), 'logwatcher-test-'));
-        const fname = join(path, '0003.txt');
+        tmpDir = await mkdtemp(join(tmpdir(), 'logwatcher-test-'));
+        const fname = join(tmpDir, '0003.txt');
 
         await writeFile(fname, '');
 
-        try {
-            const [editor, emitter] = await Promise.all([
-                waitForOutputWindow(`extension-output-`),
-                commands.executeCommand<EventEmitter>('logwatcher.watchFile', fname),
-            ]);
+        const [editor, emitter] = await Promise.all([
+            waitForOutputWindow(`extension-output-`),
+            commands.executeCommand<EventEmitter>('logwatcher.watchFile', fname),
+        ]);
 
-            notEqual(editor, undefined);
-            notEqual(emitter, undefined);
+        notEqual(editor, undefined);
+        notEqual(emitter, undefined);
 
-            await Promise.all([waitForVisibleRangesChange(editor), once(emitter, 'fileDeleted'), unlink(fname)]);
+        await Promise.all([waitForVisibleRangesChange(editor), once(emitter, 'fileDeleted'), unlink(fname)]);
 
-            const actual = editor.document.getText();
-            const expected = `*** File ${fname} has disappeared\n`;
-            equal(actual, expected);
-        } finally {
-            await rm(path, { recursive: true, force: true });
-        }
+        const actual = editor.document.getText();
+        const expected = `*** File ${fname} has disappeared\n`;
+        equal(actual, expected);
     });
 
     test('watchFileCommandHandler - preload last 10 lines', async function () {
-        const path = await mkdtemp(join(tmpdir(), 'logwatcher-test-'));
-        const fname = join(path, '0004.txt');
+        tmpDir = await mkdtemp(join(tmpdir(), 'logwatcher-test-'));
+        const fname = join(tmpDir, '0004.txt');
 
         const expectedContent = '1\n2\n3\n4\n5\n6\n7\n8\n9\nA\n';
         await writeFile(fname, `0\n${expectedContent}`);
 
-        try {
-            const [editor, emitter] = await Promise.all([
-                waitForOutputWindow(`extension-output-`),
-                commands.executeCommand<EventEmitter>('logwatcher.watchFile', fname),
-            ]);
+        const [editor, emitter] = await Promise.all([
+            waitForOutputWindow(`extension-output-`),
+            commands.executeCommand<EventEmitter>('logwatcher.watchFile', fname),
+        ]);
 
-            notEqual(editor, undefined);
-            notEqual(emitter, undefined);
+        notEqual(editor, undefined);
+        notEqual(emitter, undefined);
 
-            if (!editor.document.getText()) {
-                await waitForVisibleRangesChange(editor);
-            }
-
-            const actual = editor.document.getText();
-            equal(actual, expectedContent);
-        } finally {
-            await rm(path, { recursive: true, force: true });
+        if (!editor.document.getText()) {
+            await waitForVisibleRangesChange(editor);
         }
+
+        const actual = editor.document.getText();
+        equal(actual, expectedContent);
     });
 
     test('watchFileCommandHandler - preload entire file if less than 10 lines', async function () {
-        const path = await mkdtemp(join(tmpdir(), 'logwatcher-test-'));
-        const fname = join(path, '0005.txt');
+        tmpDir = await mkdtemp(join(tmpdir(), 'logwatcher-test-'));
+        const fname = join(tmpDir, '0005.txt');
 
         const expectedContent = '1\n2\n3\n';
         await writeFile(fname, expectedContent);
 
-        try {
-            const [editor, emitter] = await Promise.all([
-                waitForOutputWindow(`extension-output-`),
-                commands.executeCommand<EventEmitter>('logwatcher.watchFile', fname),
-            ]);
+        const [editor, emitter] = await Promise.all([
+            waitForOutputWindow(`extension-output-`),
+            commands.executeCommand<EventEmitter>('logwatcher.watchFile', fname),
+        ]);
 
-            notEqual(editor, undefined);
-            notEqual(emitter, undefined);
+        notEqual(editor, undefined);
+        notEqual(emitter, undefined);
 
-            if (!editor.document.getText()) {
-                await waitForVisibleRangesChange(editor);
-            }
-
-            const actual = editor.document.getText();
-            equal(actual, expectedContent);
-        } finally {
-            await rm(path, { recursive: true, force: true });
+        if (!editor.document.getText()) {
+            await waitForVisibleRangesChange(editor);
         }
+
+        const actual = editor.document.getText();
+        equal(actual, expectedContent);
     });
 });
