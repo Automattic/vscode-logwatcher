@@ -1,7 +1,8 @@
 import { basename, dirname } from 'node:path';
 import { FileHandle, open } from 'node:fs/promises';
-import { FileStat, RelativePattern, Uri, window, workspace } from 'vscode';
+import { FileStat, OutputChannel, RelativePattern, Uri, window, workspace } from 'vscode';
 import { addResource, getResource } from './resources';
+import EventEmitter = require('node:events');
 
 async function getFileToWatch(): Promise<string | undefined> {
 	const result = await window.showOpenDialog({
@@ -50,10 +51,13 @@ async function readInitialData(filename: string, size: number): Promise<string |
 	}
 }
 
-async function doWatchFile(filename: string): Promise<void> {
-	let { outputChannel } = getResource(filename) ?? {};
+async function doWatchFile(filename: string): Promise<EventEmitter | null> {
+	const resource = getResource(filename);
+	let outputChannel: OutputChannel;
+	let emitter: EventEmitter;
 
-	if (!outputChannel) {
+	if (!resource) {
+		emitter = new EventEmitter();
 		outputChannel = window.createOutputChannel(`Watch ${filename}`);
 		const output = outputChannel;
 		let offset: number;
@@ -67,7 +71,7 @@ async function doWatchFile(filename: string): Promise<void> {
 			} else {
 				await window.showErrorMessage(`Failed to read file ${filename}: ${data.message}`);
 				outputChannel.dispose();
-				return;
+				return null;
 			}
 		}
 
@@ -80,10 +84,12 @@ async function doWatchFile(filename: string): Promise<void> {
 			offset = 0;
 			output.appendLine(`*** File ${filename} has disappeared`);
 			output.show();
+			emitter?.emit('fileDeleted', filename);
 		});
 
 		watcher.onDidCreate(() => {
 			offset = 0;
+			emitter?.emit('fileCreated', filename);
 		});
 
 		watcher.onDidChange(async () => {
@@ -108,12 +114,16 @@ async function doWatchFile(filename: string): Promise<void> {
 			}
 
 			output.show();
+			emitter?.emit('fileChanged', filename);
 		});
 
-		addResource(filename, outputChannel, watcher);
+		addResource(filename, outputChannel, watcher, emitter);
+	} else {
+		({ outputChannel, emitter } = resource);
 	}
 
 	outputChannel.show();
+	return emitter;
 }
 
 export async function watchFileCommandHandler(filename?: string): Promise<unknown> {

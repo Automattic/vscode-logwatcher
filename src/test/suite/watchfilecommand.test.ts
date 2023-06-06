@@ -1,48 +1,36 @@
 import { deepEqual, equal, match, notEqual } from "node:assert";
-import { freeAllResources, getFilenames, getResource } from "../../resources";
-import { FileSystemWatcher, RelativePattern, TextEditor, Uri, commands, window, workspace } from "vscode";
-import { access, mkdtemp, rm, unlink, writeFile } from "node:fs/promises";
+import { EventEmitter, once } from "node:events";
+import { WriteStream, createWriteStream } from "node:fs";
+import { mkdtemp, rm, unlink, writeFile } from "node:fs/promises";
 import { setTimeout } from "node:timers/promises";
-import { basename, join } from "node:path";
+import { join } from "node:path";
 import { tmpdir } from "node:os";
-import { WriteStream, createWriteStream, writeFileSync } from "node:fs";
+import { TextEditor, commands, window } from "vscode";
+import { freeAllResources, getFilenames, getResource } from "../../resources";
 
-async function getActiveTextEditor(): Promise<TextEditor | undefined> {
+function getActiveTextEditor(): Promise<TextEditor | undefined> {
     if (window.activeTextEditor) {
-        return window.activeTextEditor;
+        return Promise.resolve(window.activeTextEditor);
     }
 
     return new Promise((resolve) => {
         const disposable = window.onDidChangeActiveTextEditor((e) => {
-            disposable.dispose();
-            resolve(e);
+            if (e) {
+                disposable.dispose();
+                resolve(e);
+            }
         });
     });
 }
 
-function waitForFileCreation(watcher: FileSystemWatcher): Promise<void> {
+function waitForOutputWindow(prefix: string): Promise<TextEditor> {
     return new Promise((resolve) => {
-        const disposable = watcher.onDidCreate(() => {
-            disposable.dispose();
-            resolve();
-        });
-    });
-}
-
-function waitForFileChange(watcher: FileSystemWatcher): Promise<void> {
-    return new Promise((resolve) => {
-        const disposable = watcher.onDidChange(() => {
-            disposable.dispose();
-            resolve();
-        });
-    });
-}
-
-function waitForFileDeletion(watcher: FileSystemWatcher): Promise<void> {
-    return new Promise((resolve) => {
-        const disposable = watcher.onDidDelete(() => {
-            disposable.dispose();
-            resolve();
+        const disposable = window.onDidChangeVisibleTextEditors((editors) => {
+            const editor = editors.find(({ document }) => document.uri.scheme === "output" && document.uri.path.startsWith(prefix));
+            if (editor) {
+                disposable.dispose();
+                resolve(editor);
+            }
         });
     });
 }
@@ -92,15 +80,13 @@ suite('WatchFileCommand', function () {
         const fname = join(path, '0001.txt');
 
         try {
-            await commands.executeCommand('logwatcher.watchFile', fname);
-            const { watcher, outputChannel } = getResource(fname) ?? {};
-            notEqual(watcher, undefined);
+            const emitter = await commands.executeCommand<EventEmitter>('logwatcher.watchFile', fname);
+            notEqual(emitter, undefined);
 
-            await setTimeout(50);
-            outputChannel?.hide();
+            await waitForOutputWindow(`extension-output-`);
 
             await Promise.all([
-                waitForFileCreation(watcher!),
+                once(emitter, 'fileCreated'),
                 writeFile(fname, ''),
             ]);
         } finally {
@@ -115,14 +101,12 @@ suite('WatchFileCommand', function () {
         const stream = createWriteStream(fname);
 
         try {
-            await commands.executeCommand('logwatcher.watchFile', fname);
-            const { watcher } = getResource(fname) ?? {};
-            notEqual(watcher, undefined);
+            const emitter = await commands.executeCommand<EventEmitter>('logwatcher.watchFile', fname);
+            await waitForOutputWindow(`extension-output-`);
 
-            await setTimeout(50);
             const expectedContent = 'this is a text\n';
             await Promise.all([
-                waitForFileChange(watcher!),
+                once(emitter, 'fileChanged'),
                 promisifiedWrite(stream, expectedContent),
             ]);
 
@@ -144,13 +128,13 @@ suite('WatchFileCommand', function () {
         await writeFile(fname, '');
 
         try {
-            await commands.executeCommand('logwatcher.watchFile', fname);
-            const { watcher } = getResource(fname) ?? {};
-            notEqual(watcher, undefined);
+            const emitter = await commands.executeCommand<EventEmitter>('logwatcher.watchFile', fname);
+            notEqual(emitter, undefined);
 
-            await setTimeout(50);
+            await waitForOutputWindow(`extension-output-`);
+
             await Promise.all([
-                waitForFileDeletion(watcher!),
+                once(emitter, 'fileDeleted'),
                 unlink(fname),
             ]);
 
