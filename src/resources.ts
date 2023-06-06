@@ -7,8 +7,13 @@ interface Resource {
 
 const resources = new Map<string, Resource>();
 
-export function addResource(path: string, outputChannel: OutputChannel, watcher: FileSystemWatcher): void {
-	resources.set(path, { outputChannel, watcher });
+export function addResource(path: string, outputChannel: OutputChannel, watcher: FileSystemWatcher): boolean {
+	if (!resources.has(path)) {
+		resources.set(path, { outputChannel, watcher });
+		return true;
+	}
+
+	return false;
 }
 
 export function freeResource(path: string): void {
