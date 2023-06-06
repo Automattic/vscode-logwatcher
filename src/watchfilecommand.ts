@@ -1,7 +1,6 @@
 import { EventEmitter } from 'node:events';
 import { FileHandle, open } from 'node:fs/promises';
 import { basename, dirname } from 'node:path';
-// eslint-disable-next-line import/no-unresolved
 import { FileStat, OutputChannel, RelativePattern, Uri, window, workspace } from 'vscode';
 import { addResource, getResource } from './resources';
 

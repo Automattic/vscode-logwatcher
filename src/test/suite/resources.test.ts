@@ -1,7 +1,6 @@
 import { deepEqual, equal, notEqual } from 'assert/strict';
 import { basename, join } from 'node:path';
 import { EventEmitter } from 'node:events';
-// eslint-disable-next-line import/no-unresolved
 import { FileSystemWatcher, OutputChannel, RelativePattern, Uri, window, workspace } from 'vscode';
 import { addResource, freeAllResources, freeResource, getFilenames, getResource } from '../../resources';
 

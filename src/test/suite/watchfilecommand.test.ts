@@ -4,7 +4,6 @@ import { WriteStream, createWriteStream } from 'node:fs';
 import { mkdtemp, rm, unlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-// eslint-disable-next-line import/no-unresolved
 import { TextEditor, commands, window } from 'vscode';
 import { freeAllResources, getFilenames } from '../../resources';
 
