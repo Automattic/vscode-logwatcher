@@ -6,22 +6,7 @@ import { setTimeout } from "node:timers/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { TextEditor, commands, window } from "vscode";
-import { freeAllResources, getFilenames, getResource } from "../../resources";
-
-function getActiveTextEditor(): Promise<TextEditor | undefined> {
-    if (window.activeTextEditor) {
-        return Promise.resolve(window.activeTextEditor);
-    }
-
-    return new Promise((resolve) => {
-        const disposable = window.onDidChangeActiveTextEditor((e) => {
-            if (e) {
-                disposable.dispose();
-                resolve(e);
-            }
-        });
-    });
-}
+import { freeAllResources, getFilenames } from "../../resources";
 
 function waitForOutputWindow(prefix: string): Promise<TextEditor> {
     return new Promise((resolve) => {
@@ -37,13 +22,7 @@ function waitForOutputWindow(prefix: string): Promise<TextEditor> {
 
 function promisifiedWrite(stream: WriteStream, data: string | Buffer): Promise<void> {
     return new Promise((resolve, reject) => {
-        stream.write(data, (err) => {
-            if (err) {
-                reject(err);
-            } else {
-                resolve();
-            }
-        });
+        stream.write(data, (err) => err ? reject(err) : resolve());
     });
 }
 
@@ -52,14 +31,16 @@ suite('WatchFileCommand', function () {
         freeAllResources();
     });
 
-    this.timeout(60000);
+    this.timeout(5000);
 
     test('watchFileCommandHandler - smoke test', async function () {
         const filename = __filename;
 
-        await commands.executeCommand('logwatcher.watchFile', filename);
+        const [editor] = await Promise.all([
+            waitForOutputWindow(`extension-output-`),
+            commands.executeCommand('logwatcher.watchFile', filename),
+        ]);
 
-        const editor = await getActiveTextEditor();
         notEqual(editor, undefined);
         match(editor?.document.fileName ?? '', new RegExp(`Watch ${filename}$`));
     });
@@ -80,10 +61,13 @@ suite('WatchFileCommand', function () {
         const fname = join(path, '0001.txt');
 
         try {
-            const emitter = await commands.executeCommand<EventEmitter>('logwatcher.watchFile', fname);
-            notEqual(emitter, undefined);
+            const [editor, emitter] = await Promise.all([
+                waitForOutputWindow(`extension-output-`),
+                commands.executeCommand<EventEmitter>('logwatcher.watchFile', fname)
+            ]);
 
-            await waitForOutputWindow(`extension-output-`);
+            notEqual(editor, undefined);
+            notEqual(emitter, undefined);
 
             await Promise.all([
                 once(emitter, 'fileCreated'),
@@ -101,8 +85,13 @@ suite('WatchFileCommand', function () {
         const stream = createWriteStream(fname);
 
         try {
-            const emitter = await commands.executeCommand<EventEmitter>('logwatcher.watchFile', fname);
-            await waitForOutputWindow(`extension-output-`);
+            const [editor, emitter] = await Promise.all([
+                waitForOutputWindow(`extension-output-`),
+                commands.executeCommand<EventEmitter>('logwatcher.watchFile', fname),
+            ]);
+
+            notEqual(editor, undefined);
+            notEqual(emitter, undefined);
 
             const expectedContent = 'this is a text\n';
             await Promise.all([
@@ -110,11 +99,8 @@ suite('WatchFileCommand', function () {
                 promisifiedWrite(stream, expectedContent),
             ]);
 
-            await setTimeout(50);
-            const editor = await getActiveTextEditor();
-            notEqual(editor, undefined);
-
-            const actual = editor?.document.getText();
+            await setTimeout(100);
+            const actual = editor.document.getText();
             equal(actual, expectedContent);
         } finally {
             await rm(path, { recursive: true, force: true });
@@ -128,21 +114,21 @@ suite('WatchFileCommand', function () {
         await writeFile(fname, '');
 
         try {
-            const emitter = await commands.executeCommand<EventEmitter>('logwatcher.watchFile', fname);
-            notEqual(emitter, undefined);
+            const [editor, emitter] = await Promise.all([
+                waitForOutputWindow(`extension-output-`),
+                commands.executeCommand<EventEmitter>('logwatcher.watchFile', fname),
+            ]);
 
-            await waitForOutputWindow(`extension-output-`);
+            notEqual(editor, undefined);
+            notEqual(emitter, undefined);
 
             await Promise.all([
                 once(emitter, 'fileDeleted'),
                 unlink(fname),
             ]);
 
-            await setTimeout(50);
-            const editor = await getActiveTextEditor();
-            notEqual(editor, undefined);
-
-            const actual = editor?.document.getText();
+            await setTimeout(100);
+            const actual = editor.document.getText();
             const expected = `*** File ${fname} has disappeared\n`;
             equal(actual, expected);
         } finally {
@@ -158,15 +144,16 @@ suite('WatchFileCommand', function () {
         await writeFile(fname, `0\n${expectedContent}`);
 
         try {
-            await commands.executeCommand('logwatcher.watchFile', fname);
-            const { watcher } = getResource(fname) ?? {};
-            notEqual(watcher, undefined);
+            const [editor, emitter] = await Promise.all([
+                waitForOutputWindow(`extension-output-`),
+                commands.executeCommand<EventEmitter>('logwatcher.watchFile', fname),
+            ]);
 
-            await setTimeout(50);
-            const editor = await getActiveTextEditor();
             notEqual(editor, undefined);
+            notEqual(emitter, undefined);
 
-            const actual = editor?.document.getText();
+            await setTimeout(100);
+            const actual = editor.document.getText();
             equal(actual, expectedContent);
         } finally {
             await rm(path, { recursive: true, force: true });
@@ -181,15 +168,16 @@ suite('WatchFileCommand', function () {
         await writeFile(fname, expectedContent);
 
         try {
-            await commands.executeCommand('logwatcher.watchFile', fname);
-            const { watcher } = getResource(fname) ?? {};
-            notEqual(watcher, undefined);
+            const [editor, emitter] = await Promise.all([
+                waitForOutputWindow(`extension-output-`),
+                commands.executeCommand<EventEmitter>('logwatcher.watchFile', fname),
+            ]);
 
-            await setTimeout(50);
-            const editor = await getActiveTextEditor();
             notEqual(editor, undefined);
+            notEqual(emitter, undefined);
 
-            const actual = editor?.document.getText();
+            await setTimeout(100);
+            const actual = editor.document.getText();
             equal(actual, expectedContent);
         } finally {
             await rm(path, { recursive: true, force: true });

@@ -83,13 +83,13 @@ async function doWatchFile(filename: string): Promise<EventEmitter | null> {
 		watcher.onDidDelete(() => {
 			offset = 0;
 			output.appendLine(`*** File ${filename} has disappeared`);
-			output.show();
-			emitter?.emit('fileDeleted', filename);
+			output.show(true);
+			process.nextTick(() => emitter?.emit('fileDeleted', filename));
 		});
 
 		watcher.onDidCreate(() => {
 			offset = 0;
-			emitter?.emit('fileCreated', filename);
+			process.nextTick(() => emitter?.emit('fileCreated', filename));
 		});
 
 		watcher.onDidChange(async () => {
@@ -113,8 +113,8 @@ async function doWatchFile(filename: string): Promise<EventEmitter | null> {
 				await fd?.close();
 			}
 
-			output.show();
-			emitter?.emit('fileChanged', filename);
+			output.show(true);
+			process.nextTick(() => emitter?.emit('fileChanged', filename));
 		});
 
 		addResource(filename, outputChannel, watcher, emitter);
