@@ -1,13 +1,14 @@
+// eslint-disable-next-line import/no-unresolved
 import { window } from 'vscode';
 import { freeResource, getFilenames } from './resources';
 
 export async function stopWatchingCommandHandler(): Promise<void> {
-	const path = await window.showQuickPick([...getFilenames()], {
-		canPickMany: false,
-		placeHolder: 'Choose a file to stop watching',
-	});
+    const path = await window.showQuickPick([...getFilenames()], {
+        canPickMany: false,
+        placeHolder: 'Choose a file to stop watching',
+    });
 
-	if (path) {
-		freeResource(path);
-	}
+    if (path) {
+        freeResource(path);
+    }
 }
