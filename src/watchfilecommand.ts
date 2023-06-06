@@ -1,5 +1,5 @@
 import { basename, dirname } from 'node:path';
-import { open } from 'node:fs/promises';
+import { FileHandle, open } from 'node:fs/promises';
 import { FileStat, RelativePattern, Uri, window, workspace } from 'vscode';
 import { addResource, getResource } from './resources';
 
@@ -14,11 +14,7 @@ async function getFileToWatch(): Promise<string | undefined> {
 }
 
 function statFile(filename: string): Thenable<FileStat | null> {
-	try {
-		return workspace.fs.stat(Uri.file(filename));
-	} catch (err) {
-		return Promise.resolve(null);
-	}
+	return workspace.fs.stat(Uri.file(filename)).then((fstat) => fstat, () => null);
 }
 
 async function readInitialData(filename: string, size: number): Promise<string | Error> {
@@ -30,22 +26,28 @@ async function readInitialData(filename: string, size: number): Promise<string |
 	const NUMBER_OF_LINES = 10;
 
 	let data: string;
+	let fd: FileHandle | undefined;
 	try {
 		const buffer = Buffer.alloc(size < READ_BUFFER_SIZE ? size : READ_BUFFER_SIZE);
-		const fd = await open(filename, 'r');
+		fd = await open(filename, 'r');
 		await fd.read(buffer, 0, buffer.length, size - buffer.length);
 		data = buffer.toString('ascii');
-		if (size - buffer.length > 0) {
-			const lines = data.split('\n');
-			// Ignore the very first line, as it may be incomplete
-			// `+1` is to account for the last newline character (we will have an empty line in the end of the array)
-			data = lines.slice(lines.length > (NUMBER_OF_LINES + 1) ? -(NUMBER_OF_LINES + 1) : 1).join('\n');
+
+		const lines = data.split('\n');
+		// If the file ends with a new line, the last line is empty, so we need to amend the number of lines
+		const amendment = lines[lines.length - 1].length > 0 ? 0 : 1;
+		if (lines.length <= NUMBER_OF_LINES + amendment) {
+			// If file size is greater than the size of the buffer, we may need to throw away the first line
+			// because it may be incomplete
+			return size > buffer.length ? lines.slice(1).join('\n') : data;
 		}
+
+		return lines.slice(-NUMBER_OF_LINES - amendment).join('\n');
 	} catch (err) {
 		return err as Error;
+	} finally {
+		await fd?.close();
 	}
-
-	return data;
 }
 
 async function doWatchFile(filename: string): Promise<void> {
@@ -85,8 +87,10 @@ async function doWatchFile(filename: string): Promise<void> {
 		});
 
 		watcher.onDidChange(async () => {
+			let fd: FileHandle | undefined;
+			let stats: FileStat | null;
 			try {
-				const [fd, stats] = await Promise.all([
+				[fd, stats] = await Promise.all([
 					open(filename, 'r'),
 					statFile(filename),
 				]);
@@ -99,7 +103,10 @@ async function doWatchFile(filename: string): Promise<void> {
 				}
 			} catch (err) {
 				output.appendLine(`*** Failed to read file ${filename}: ${(err as Error).message}`);
+			} finally {
+				await fd?.close();
 			}
+
 			output.show();
 		});
 
@@ -109,8 +116,11 @@ async function doWatchFile(filename: string): Promise<void> {
 	outputChannel.show();
 }
 
-export async function watchFileCommandHandler(): Promise<unknown> {
-	const filename = await getFileToWatch();
+export async function watchFileCommandHandler(filename?: string): Promise<unknown> {
+	if (typeof filename === 'undefined') {
+		filename = await getFileToWatch();
+	}
+
 	if (!filename) {
 		return;
 	}
