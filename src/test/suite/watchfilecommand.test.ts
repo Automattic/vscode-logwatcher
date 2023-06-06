@@ -1,17 +1,19 @@
-import { deepEqual, equal, match, notEqual } from "node:assert";
-import { EventEmitter, once } from "node:events";
-import { WriteStream, createWriteStream } from "node:fs";
-import { mkdtemp, rm, unlink, writeFile } from "node:fs/promises";
-import { setTimeout } from "node:timers/promises";
-import { join } from "node:path";
-import { tmpdir } from "node:os";
-import { TextEditor, commands, window } from "vscode";
-import { freeAllResources, getFilenames } from "../../resources";
+import { deepEqual, equal, match, notEqual } from 'node:assert';
+import { EventEmitter, once } from 'node:events';
+import { WriteStream, createWriteStream } from 'node:fs';
+import { mkdtemp, rm, unlink, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+// eslint-disable-next-line import/no-unresolved
+import { TextEditor, commands, window } from 'vscode';
+import { freeAllResources, getFilenames } from '../../resources';
 
 function waitForOutputWindow(prefix: string): Promise<TextEditor> {
     return new Promise((resolve) => {
         const disposable = window.onDidChangeVisibleTextEditors((editors) => {
-            const editor = editors.find(({ document }) => document.uri.scheme === "output" && document.uri.path.startsWith(prefix));
+            const editor = editors.find(
+                ({ document }) => document.uri.scheme === 'output' && document.uri.path.startsWith(prefix),
+            );
             if (editor) {
                 disposable.dispose();
                 resolve(editor);
@@ -20,9 +22,20 @@ function waitForOutputWindow(prefix: string): Promise<TextEditor> {
     });
 }
 
+function waitForVisibleRangesChange(editor: TextEditor): Promise<void> {
+    return new Promise((resolve) => {
+        const disposable = window.onDidChangeTextEditorVisibleRanges((e) => {
+            if (e.textEditor === editor) {
+                disposable.dispose();
+                resolve();
+            }
+        });
+    });
+}
+
 function promisifiedWrite(stream: WriteStream, data: string | Buffer): Promise<void> {
     return new Promise((resolve, reject) => {
-        stream.write(data, (err) => err ? reject(err) : resolve());
+        stream.write(data, (err) => (err ? reject(err) : resolve()));
     });
 }
 
@@ -42,7 +55,7 @@ suite('WatchFileCommand', function () {
         ]);
 
         notEqual(editor, undefined);
-        match(editor?.document.fileName ?? '', new RegExp(`Watch ${filename}$`));
+        match(editor?.document.fileName ?? '', new RegExp(`Watch ${filename.replace(/\\/gu, '\\\\')}$`, 'u'));
     });
 
     test('watchFileCommandHandler - reuse existing output channel', async function () {
@@ -63,16 +76,13 @@ suite('WatchFileCommand', function () {
         try {
             const [editor, emitter] = await Promise.all([
                 waitForOutputWindow(`extension-output-`),
-                commands.executeCommand<EventEmitter>('logwatcher.watchFile', fname)
+                commands.executeCommand<EventEmitter>('logwatcher.watchFile', fname),
             ]);
 
             notEqual(editor, undefined);
             notEqual(emitter, undefined);
 
-            await Promise.all([
-                once(emitter, 'fileCreated'),
-                writeFile(fname, ''),
-            ]);
+            await Promise.all([once(emitter, 'fileCreated'), writeFile(fname, '')]);
         } finally {
             await rm(path, { recursive: true, force: true });
         }
@@ -95,11 +105,11 @@ suite('WatchFileCommand', function () {
 
             const expectedContent = 'this is a text\n';
             await Promise.all([
+                waitForVisibleRangesChange(editor),
                 once(emitter, 'fileChanged'),
                 promisifiedWrite(stream, expectedContent),
             ]);
 
-            await setTimeout(100);
             const actual = editor.document.getText();
             equal(actual, expectedContent);
         } finally {
@@ -122,12 +132,8 @@ suite('WatchFileCommand', function () {
             notEqual(editor, undefined);
             notEqual(emitter, undefined);
 
-            await Promise.all([
-                once(emitter, 'fileDeleted'),
-                unlink(fname),
-            ]);
+            await Promise.all([waitForVisibleRangesChange(editor), once(emitter, 'fileDeleted'), unlink(fname)]);
 
-            await setTimeout(100);
             const actual = editor.document.getText();
             const expected = `*** File ${fname} has disappeared\n`;
             equal(actual, expected);
@@ -152,7 +158,10 @@ suite('WatchFileCommand', function () {
             notEqual(editor, undefined);
             notEqual(emitter, undefined);
 
-            await setTimeout(100);
+            if (!editor.document.getText()) {
+                await waitForVisibleRangesChange(editor);
+            }
+
             const actual = editor.document.getText();
             equal(actual, expectedContent);
         } finally {
@@ -176,7 +185,10 @@ suite('WatchFileCommand', function () {
             notEqual(editor, undefined);
             notEqual(emitter, undefined);
 
-            await setTimeout(100);
+            if (!editor.document.getText()) {
+                await waitForVisibleRangesChange(editor);
+            }
+
             const actual = editor.document.getText();
             equal(actual, expectedContent);
         } finally {

@@ -1,6 +1,7 @@
 import { deepEqual, equal, notEqual } from 'assert/strict';
 import { basename, join } from 'node:path';
 import { EventEmitter } from 'node:events';
+// eslint-disable-next-line import/no-unresolved
 import { FileSystemWatcher, OutputChannel, RelativePattern, Uri, window, workspace } from 'vscode';
 import { addResource, freeAllResources, freeResource, getFilenames, getResource } from '../../resources';
 
@@ -8,7 +9,9 @@ function createResource(filename: string): [OutputChannel, FileSystemWatcher, Ev
     const channel = window.createOutputChannel(filename);
     const watcher = workspace.createFileSystemWatcher(
         new RelativePattern(Uri.file(filename), basename(filename)),
-        false, false, false
+        false,
+        false,
+        false,
     );
     const emitter = new EventEmitter();
 
