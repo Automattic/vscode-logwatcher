@@ -33,8 +33,8 @@ function waitForVisibleRangesChange(editor: TextEditor): Promise<void> {
 }
 
 function promisifiedWrite(stream: WriteStream, data: string | Buffer): Promise<void> {
-    return new Promise((resolve, reject) => {
-        stream.write(data, (err) => (err ? reject(err) : resolve()));
+    return new Promise((resolve) => {
+        stream.end(data, resolve);
     });
 }
 
