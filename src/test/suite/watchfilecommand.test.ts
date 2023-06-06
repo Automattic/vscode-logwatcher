@@ -6,6 +6,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { TextEditor, commands, window } from 'vscode';
 import { freeAllResources, getFilenames } from '../../resources';
+import { platform } from 'node:os';
 
 function waitForOutputWindow(prefix: string): Promise<TextEditor> {
     return new Promise((resolve) => {
@@ -43,7 +44,7 @@ suite('WatchFileCommand', function () {
         freeAllResources();
     });
 
-    this.timeout(5000);
+    this.timeout('win32' === platform() ? 60000 : 2000);
 
     test('watchFileCommandHandler - smoke test', async function () {
         const filename = __filename;
