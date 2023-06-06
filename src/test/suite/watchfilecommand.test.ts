@@ -2,11 +2,10 @@ import { deepEqual, equal, match, notEqual } from 'node:assert';
 import { EventEmitter, once } from 'node:events';
 import { WriteStream, createWriteStream } from 'node:fs';
 import { mkdtemp, rm, unlink, writeFile } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
+import { EOL, platform, tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { TextEditor, commands, window } from 'vscode';
 import { freeAllResources, getFilenames } from '../../resources';
-import { platform } from 'node:os';
 
 function waitForOutputWindow(prefix: string): Promise<TextEditor> {
     return new Promise((resolve) => {
@@ -103,7 +102,7 @@ suite('WatchFileCommand', function () {
             notEqual(editor, undefined);
             notEqual(emitter, undefined);
 
-            const expectedContent = 'this is a text\n';
+            const expectedContent = `this is a text${EOL}`;
             await Promise.all([
                 waitForVisibleRangesChange(editor),
                 once(emitter, 'fileChanged'),
