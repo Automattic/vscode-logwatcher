@@ -2,7 +2,7 @@ import { EventEmitter } from 'node:events';
 import { FileHandle, open } from 'node:fs/promises';
 import { basename, dirname } from 'node:path';
 import { FileStat, OutputChannel, RelativePattern, Uri, window, workspace } from 'vscode';
-import { addResource, getResource } from './resources';
+import { Resource, addResource, getResource } from './resources';
 
 async function getFileToWatch(): Promise<string | undefined> {
     const result = await window.showOpenDialog({
@@ -55,7 +55,7 @@ async function readInitialData(filename: string, size: number): Promise<string |
 }
 
 async function doWatchFile(filename: string): Promise<EventEmitter | null> {
-    const resource = getResource(filename);
+    let resource = getResource(filename);
     let outputChannel: OutputChannel;
     let emitter: EventEmitter;
 
@@ -85,17 +85,24 @@ async function doWatchFile(filename: string): Promise<EventEmitter | null> {
             false,
         );
 
+        resource = {
+            outputChannel,
+            watcher,
+            emitter,
+            disposables: [],
+        };
+
         watcher.onDidDelete(() => {
             offset = 0;
             output.appendLine(`*** File ${filename} has disappeared`);
             output.show(true);
             process.nextTick(() => emitter?.emit('fileDeleted', filename));
-        });
+        }, null, resource.disposables);
 
         watcher.onDidCreate(() => {
             offset = 0;
             process.nextTick(() => emitter?.emit('fileCreated', filename));
-        });
+        }, null, resource.disposables);
 
         watcher.onDidChange(async () => {
             let fd: FileHandle | undefined;
@@ -117,9 +124,9 @@ async function doWatchFile(filename: string): Promise<EventEmitter | null> {
 
             output.show(true);
             process.nextTick(() => emitter?.emit('fileChanged', filename));
-        });
+        }, null, resource.disposables);
 
-        addResource(filename, outputChannel, watcher, emitter);
+        addResource(filename, resource);
     } else {
         ({ outputChannel, emitter } = resource);
     }

@@ -1,22 +1,18 @@
 import type { EventEmitter } from 'node:events';
-import type { FileSystemWatcher, OutputChannel } from 'vscode';
+import type { Disposable, FileSystemWatcher, OutputChannel } from 'vscode';
 
-interface Resource {
+export interface Resource {
     outputChannel: OutputChannel;
     watcher: FileSystemWatcher;
     emitter: EventEmitter;
+    disposables?: Disposable[];
 }
 
 const resources = new Map<string, Resource>();
 
-export function addResource(
-    path: string,
-    outputChannel: OutputChannel,
-    watcher: FileSystemWatcher,
-    emitter: EventEmitter,
-): boolean {
+export function addResource(path: string, resource: Resource): boolean {
     if (!resources.has(path)) {
-        resources.set(path, { outputChannel, watcher, emitter });
+        resources.set(path, resource);
         return true;
     }
 
@@ -24,6 +20,10 @@ export function addResource(
 }
 
 function doFreeResource(resource: Resource): void {
+    if (resource.disposables) {
+        resource.disposables.forEach((disposable) => disposable.dispose());
+    }
+
     resource.outputChannel.dispose();
     resource.watcher.dispose();
     resource.emitter.removeAllListeners();
