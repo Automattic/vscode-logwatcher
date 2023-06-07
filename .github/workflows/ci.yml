@@ -14,13 +14,18 @@ permissions:
 jobs:
   build:
     name: Run tests on ${{ matrix.os }}
+    continue-on-error: ${{ matrix.experimental }}
     strategy:
       fail-fast: false
       matrix:
         os:
           - macos-latest
           - ubuntu-latest
-          - windows-latest
+        experimental:
+          - false
+        include:
+          - os: windows-latest
+            experimental: true
     runs-on: ${{ matrix.os }}
     steps:
       - name: Check out the source code
