@@ -4,11 +4,13 @@
   "displayName": "Log Watcher",
   "description": "Log Watcher is an extension for VSCode to watch logs and display them in the \"Output\" tab, much like what \"tail -F\" does.",
   "version": "0.0.1",
+  "preview": true,
   "keywords": [
     "logs",
     "log watcher",
     "vscode extension"
   ],
+  "icon": "images/icon.png",
   "author": "Volodymyr Kolesnykov <volodymyr@wildwolf.name> (https://wildwolf.name/)",
   "license": "MIT",
   "repository": {
