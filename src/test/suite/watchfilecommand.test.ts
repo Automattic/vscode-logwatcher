@@ -4,6 +4,7 @@ import { WriteStream, createWriteStream } from 'node:fs';
 import { mkdtemp, rm, unlink, writeFile } from 'node:fs/promises';
 import { EOL, platform, tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { setTimeout } from 'node:timers/promises';
 import { TextEditor, commands, window } from 'vscode';
 import { freeAllResources, getFilenames } from '../../resources';
 import { waitForOutputWindow } from './utils';
@@ -20,6 +21,11 @@ const waitForVisibleRangesChange = (editor: TextEditor): Promise<void> =>
 
 const promisifiedWrite = (stream: WriteStream, data: string | Buffer): Promise<void> => new Promise((resolve) => stream.end(data, resolve));
 const nextTick = (): Promise<void> => new Promise((resolve) => process.nextTick(resolve));
+const delayForWinGHA = async (ms = 1000): Promise<void> => {
+    if (platform() === 'win32' && process.env.GITHUB_ACTIONS === 'true') {
+        await setTimeout(ms);
+    }
+};
 
 suite('WatchFileCommand', function () {
     let tmpDir: string;
@@ -63,6 +69,7 @@ suite('WatchFileCommand', function () {
         notEqual(editor, undefined);
         notEqual(emitter, undefined);
 
+        await delayForWinGHA();
         await Promise.all([once(emitter, 'fileCreated'), writeFile(fname, '')]);
     });
 
@@ -77,6 +84,8 @@ suite('WatchFileCommand', function () {
 
         notEqual(editor, undefined);
         notEqual(emitter, undefined);
+
+        await delayForWinGHA();
 
         const expectedContent = `this is a text${EOL}`;
         await Promise.all([
@@ -102,6 +111,7 @@ suite('WatchFileCommand', function () {
         notEqual(editor, undefined);
         notEqual(emitter, undefined);
 
+        await delayForWinGHA();
         await Promise.all([waitForVisibleRangesChange(editor), once(emitter, 'fileDeleted'), unlink(fname)]);
 
         const actual = editor.document.getText();
