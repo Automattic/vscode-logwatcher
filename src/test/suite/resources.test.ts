@@ -1,17 +1,20 @@
-import { deepEqual, equal, notEqual,  } from 'assert/strict';
-import { basename } from 'node:path';
-import { FileSystemWatcher, OutputChannel, RelativePattern, Uri, window, workspace } from 'vscode';
-import { addResource, freeAllResources, freeResource, getFilenames, getResource } from '../../resources';
-import { join } from 'path';
+import { deepEqual, equal, notEqual } from 'assert/strict';
+import { basename, join } from 'node:path';
+import { EventEmitter } from 'node:events';
+import { RelativePattern, Uri, window, workspace } from 'vscode';
+import { Resource, addResource, freeAllResources, freeResource, getFilenames, getResource } from '../../resources';
 
-function createChannelAndWatcher(filename: string): [OutputChannel, FileSystemWatcher] {
-    const channel = window.createOutputChannel(filename);
+function createResource(filename: string): Resource {
+    const outputChannel = window.createOutputChannel(filename);
     const watcher = workspace.createFileSystemWatcher(
         new RelativePattern(Uri.file(filename), basename(filename)),
-        false, false, false
+        false,
+        false,
+        false,
     );
+    const emitter = new EventEmitter();
 
-    return [channel, watcher];
+    return { outputChannel, watcher, emitter };
 }
 
 suite('Resources', function () {
@@ -21,23 +24,20 @@ suite('Resources', function () {
 
     test('addResource', function () {
         const filename = __filename;
-        const [channel, watcher] = createChannelAndWatcher(filename);
+        const r = createResource(filename);
 
-        const added = addResource(filename, channel, watcher);
+        const added = addResource(filename, r);
         equal(added, true);
 
         const resource = getResource(filename);
-        notEqual(resource, undefined);
-        equal(resource?.outputChannel, channel);
-        equal(resource?.watcher, watcher);
+        deepEqual(resource, r);
     });
 
     test('freeResource', function () {
         let resource;
         const filename = __filename;
-        const [channel, watcher] = createChannelAndWatcher(filename);
 
-        const added = addResource(filename, channel, watcher);
+        const added = addResource(filename, createResource(filename));
         equal(added, true);
 
         resource = getResource(filename);
@@ -54,12 +54,10 @@ suite('Resources', function () {
         let added;
         const filename1 = __filename;
         const filename2 = join(__dirname, 'index.js');
-        const [channel1, watcher1] = createChannelAndWatcher(filename1);
-        const [channel2, watcher2] = createChannelAndWatcher(filename2);
 
-        added = addResource(filename1, channel1, watcher1);
+        added = addResource(filename1, createResource(filename1));
         equal(added, true);
-        added = addResource(filename2, channel2, watcher2);
+        added = addResource(filename2, createResource(filename2));
         equal(added, true);
 
         resource = getResource(filename1);
@@ -79,12 +77,10 @@ suite('Resources', function () {
         let added;
         const filename1 = __filename;
         const filename2 = join(__dirname, 'index.js');
-        const [channel1, watcher1] = createChannelAndWatcher(filename1);
-        const [channel2, watcher2] = createChannelAndWatcher(filename2);
 
-        added = addResource(filename1, channel1, watcher1);
+        added = addResource(filename1, createResource(filename1));
         equal(added, true);
-        added = addResource(filename2, channel2, watcher2);
+        added = addResource(filename2, createResource(filename2));
         equal(added, true);
 
         const expected = [filename1, filename2];
