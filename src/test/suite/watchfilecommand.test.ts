@@ -6,19 +6,7 @@ import { EOL, platform, tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { TextEditor, commands, window } from 'vscode';
 import { freeAllResources, getFilenames } from '../../resources';
-
-const waitForOutputWindow = (prefix: string): Promise<TextEditor> =>
-    new Promise((resolve) => {
-        const disposable = window.onDidChangeVisibleTextEditors((editors) => {
-            const editor = editors.find(
-                ({ document }) => document.uri.scheme === 'output' && document.uri.path.startsWith(prefix),
-            );
-            if (editor) {
-                disposable.dispose();
-                resolve(editor);
-            }
-        });
-    });
+import { waitForOutputWindow } from './utils';
 
 const waitForVisibleRangesChange = (editor: TextEditor): Promise<void> =>
     new Promise((resolve) => {

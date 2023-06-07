@@ -30,8 +30,8 @@ function doFreeResource(resource: Resource): void {
 }
 
 export function freeResource(path: string): void {
-    if (resources.has(path)) {
-        const resource = resources.get(path) as Resource;
+    const resource = resources.get(path);
+    if (resource) {
         doFreeResource(resource);
         resources.delete(path);
     }
