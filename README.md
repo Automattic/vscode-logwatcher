@@ -4,7 +4,7 @@ Log Watcher is an extension for VSCode to watch logs and display them in the "Ou
 
 ## Features
 
-![log-watcher](https://github.com/Automattic/vscode-logwatcher/assets/7810770/e29676ca-ea6f-4ba1-8161-3a4eadb6867a)
+![Log Watcher](https://github.com/Automattic/vscode-logwatcher/assets/7810770/f3849fa6-09cf-4936-9d26-12a25ca1dd18)
 
 ## Requirements
 
