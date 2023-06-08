@@ -1,6 +1,6 @@
 {
   "name": "logwatcher",
-  "publisher": "wwa83",
+  "publisher": "automattic",
   "displayName": "Log Watcher",
   "description": "Log Watcher is an extension for VSCode to watch logs and display them in the \"Output\" tab, much like what \"tail -F\" does.",
   "version": "0.0.1",
@@ -61,6 +61,7 @@
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src --ext ts",
     "test": "node ./out/test/runTest.js",
+    "package": "vsce package",
     "deploy": "vsce publish"
   },
   "devDependencies": {
