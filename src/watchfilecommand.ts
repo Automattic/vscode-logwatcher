@@ -2,7 +2,7 @@ import { EventEmitter } from 'node:events';
 import { FileHandle, open } from 'node:fs/promises';
 import { basename, dirname } from 'node:path';
 import { FileStat, OutputChannel, RelativePattern, Uri, window, workspace } from 'vscode';
-import { Resource, addResource, getResource } from './resources';
+import { addResource, getResource } from './resources';
 
 async function getFileToWatch(): Promise<string | undefined> {
     const result = await window.showOpenDialog({
@@ -61,7 +61,7 @@ async function doWatchFile(filename: string): Promise<EventEmitter | null> {
 
     if (!resource) {
         emitter = new EventEmitter();
-        outputChannel = window.createOutputChannel(`Watch ${filename}`);
+        outputChannel = window.createOutputChannel(`Watch ${filename}`, 'log');
         const output = outputChannel;
         let offset: number;
         const stats = await statFile(filename);
