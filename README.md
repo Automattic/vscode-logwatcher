@@ -1,5 +1,8 @@
 # Log Watcher
 
+[![CI](https://github.com/Automattic/vscode-logwatcher/actions/workflows/ci.yml/badge.svg)](https://github.com/Automattic/vscode-logwatcher/actions/workflows/ci.yml)
+[![Dependency Review](https://github.com/Automattic/vscode-logwatcher/actions/workflows/dependency-review.yml/badge.svg)](https://github.com/Automattic/vscode-logwatcher/actions/workflows/dependency-review.yml)
+
 Log Watcher is an extension for VSCode to watch logs and display them in the "Output" tab, much like what `tail -F` does.
 
 ## Features
