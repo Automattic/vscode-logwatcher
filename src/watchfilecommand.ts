@@ -54,6 +54,14 @@ async function readInitialData(filename: string, size: number): Promise<string |
     }
 }
 
+function maybeShowOutput(outputChannel: OutputChannel, preserveFocus?: boolean | undefined): void {
+    const configuration = workspace.getConfiguration();
+    const show = configuration.get<boolean>('LogWatcher.automaticallyShowChanges');
+    if (show) {
+        outputChannel.show(preserveFocus);
+    }
+}
+
 async function doWatchFile(filename: string, quiet = false): Promise<EventEmitter | null> {
     let resource = getResource(filename);
     let outputChannel: OutputChannel;
@@ -95,7 +103,7 @@ async function doWatchFile(filename: string, quiet = false): Promise<EventEmitte
         watcher.onDidDelete(() => {
             offset = 0;
             output.appendLine(`*** File ${filename} has disappeared`);
-            output.show(true);
+            maybeShowOutput(output, true);
             process.nextTick(() => emitter?.emit('fileDeleted', filename));
         }, null, resource.disposables);
 
@@ -122,7 +130,7 @@ async function doWatchFile(filename: string, quiet = false): Promise<EventEmitte
                 await fd?.close();
             }
 
-            output.show(true);
+            maybeShowOutput(output, true);
             process.nextTick(() => emitter?.emit('fileChanged', filename));
         }, null, resource.disposables);
 
@@ -132,7 +140,7 @@ async function doWatchFile(filename: string, quiet = false): Promise<EventEmitte
     }
 
     if (!quiet) {
-        outputChannel.show();
+        maybeShowOutput(outputChannel);
     }
 
     return emitter;
