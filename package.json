@@ -34,7 +34,7 @@
     "commands": [
       {
         "command": "logwatcher.watchFile",
-        "title": "Watch File",
+        "title": "Watch File…",
         "category": "Log Watcher"
       },
       {

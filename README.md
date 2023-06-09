@@ -9,9 +9,17 @@ Log Watcher is an extension for VSCode to watch logs and display them in the "Ou
 
 ![Log Watcher](https://github.com/Automattic/vscode-logwatcher/assets/7810770/f3849fa6-09cf-4936-9d26-12a25ca1dd18)
 
+Avaiable commands:
+  * **Log Watcher: Watch File…**: starts watching the specified file for changes. The changes will be shown in the Output tab.
+  * **Log Watcher: Stop Watching File…**: stops watching the specified file.
+  * **Log Watcher: Watch nginx access.log**: watch `/var/log/nginx/access.log` for changes.
+  * **Log Watcher: Watch nginx error.log**: watch `/var/log/nginx/error.log` for changes.
+
 ## Requirements
 
 This extension is tailored for development of [WordPress VIP](https://docs.wpvip.com/) with [GitHub Codespaces](https://docs.wpvip.com/technical-references/developing-with-github-codespaces/). While the "Watch File" command will work everywhere, more specialized commands like "Watch nginx access.log" expect to find the log files in the preconfigured places.
+
+Log coloring is available when the [Log File Highlighter](https://marketplace.visualstudio.com/items?itemName=emilast.LogFileHighlighter) extension is installed.
 
 ### Installation
 
