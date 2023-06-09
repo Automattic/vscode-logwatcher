@@ -43,6 +43,11 @@
             "type": "string"
           },
           "description": "List of the files to watch on startup"
+        },
+        "LogWatcher.automaticallyShowChanges": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically switch to the \"Output\" tab when a watched file gets changed"
         }
       }
     },
