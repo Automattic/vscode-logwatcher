@@ -22,7 +22,7 @@ jobs:
       - name: Set up Node.js environment
         uses: actions/setup-node@64ed1c7eab4cce3362f8c340dee64e5eaeef8f7c # v3.6.0
         with:
-          node-version: 16.x
+          node-version-file: package.json
           cache: npm
 
       - name: Install dependencies
@@ -44,7 +44,7 @@ jobs:
       - name: Set up Node.js environment
         uses: actions/setup-node@64ed1c7eab4cce3362f8c340dee64e5eaeef8f7c # v3.6.0
         with:
-          node-version: 16.x
+          node-version-file: package.json
           cache: npm
 
       - name: Install dependencies
