@@ -15,6 +15,9 @@ Avaiable commands:
   * **Log Watcher: Watch nginx access.log**: watch `/var/log/nginx/access.log` for changes.
   * **Log Watcher: Watch nginx error.log**: watch `/var/log/nginx/error.log` for changes.
 
+Settings:
+  * **Log Watcher: Watch Files On Startup** (`LogWatcher.watchFilesOnStartup`): the list of the files the extension should watch for changes on startup.
+
 ## Requirements
 
 This extension is tailored for development of [WordPress VIP](https://docs.wpvip.com/) with [GitHub Codespaces](https://docs.wpvip.com/technical-references/developing-with-github-codespaces/). While the "Watch File" command will work everywhere, more specialized commands like "Watch nginx access.log" expect to find the log files in the preconfigured places.

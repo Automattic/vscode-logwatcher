@@ -54,7 +54,7 @@ async function readInitialData(filename: string, size: number): Promise<string |
     }
 }
 
-async function doWatchFile(filename: string): Promise<EventEmitter | null> {
+async function doWatchFile(filename: string, quiet = false): Promise<EventEmitter | null> {
     let resource = getResource(filename);
     let outputChannel: OutputChannel;
     let emitter: EventEmitter;
@@ -131,16 +131,19 @@ async function doWatchFile(filename: string): Promise<EventEmitter | null> {
         ({ outputChannel, emitter } = resource);
     }
 
-    outputChannel.show();
+    if (!quiet) {
+        outputChannel.show();
+    }
+
     return emitter;
 }
 
-export async function watchFileCommandHandler(filename?: string): Promise<unknown> {
+export async function watchFileCommandHandler(filename?: string, quiet = false): Promise<unknown> {
     if (typeof filename === 'undefined') {
         filename = await getFileToWatch();
     }
 
-    return filename ? doWatchFile(filename) : null;
+    return filename ? doWatchFile(filename, quiet) : null;
 }
 
 export function watchNginxAccessLogCommandHandler(): Promise<unknown> {
