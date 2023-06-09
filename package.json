@@ -28,9 +28,24 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": [],
   "main": "./out/extension.js",
+  "activationEvents": [
+    "onStartupFinished"
+  ],
   "contributes": {
+    "configuration": {
+      "title": "Log Watcher",
+      "properties": {
+        "LogWatcher.watchFilesOnStartup": {
+          "type": "array",
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "description": "List of the files to watch on startup"
+        }
+      }
+    },
     "commands": [
       {
         "command": "logwatcher.watchFile",
