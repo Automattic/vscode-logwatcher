@@ -2,7 +2,7 @@ import { EventEmitter } from 'node:events';
 import { FileHandle, open } from 'node:fs/promises';
 import { basename, dirname } from 'node:path';
 import { FileStat, OutputChannel, RelativePattern, Uri, window, workspace } from 'vscode';
-import { addResource, getResource } from './resources';
+import { Resource, addResource, getResource } from './resources';
 
 async function getFileToWatch(): Promise<string | undefined> {
     const result = await window.showOpenDialog({
@@ -62,83 +62,84 @@ function maybeShowOutput(outputChannel: OutputChannel, preserveFocus?: boolean |
     }
 }
 
-async function doWatchFile(filename: string, quiet = false): Promise<EventEmitter | null> {
-    let resource = getResource(filename);
-    let outputChannel: OutputChannel;
-    let emitter: EventEmitter;
+async function setUpWatcher(filename: string): Promise<Resource | null> {
+    const emitter = new EventEmitter();
+    const outputChannel = window.createOutputChannel(`Watch ${filename}`, 'log');
+    const output = outputChannel;
+    const stats = await statFile(filename);
+    let offset = stats?.size ?? 0;
 
-    if (!resource) {
-        emitter = new EventEmitter();
-        outputChannel = window.createOutputChannel(`Watch ${filename}`, 'log');
-        const output = outputChannel;
-        let offset: number;
-        const stats = await statFile(filename);
-        offset = stats?.size ?? 0;
-
-        if (offset) {
-            const data = await readInitialData(filename, offset);
-            if (typeof data === 'string') {
-                outputChannel.append(data);
-            } else {
-                await window.showErrorMessage(`Failed to read file ${filename}: ${data.message}`);
-                outputChannel.dispose();
-                return null;
-            }
+    if (offset) {
+        const data = await readInitialData(filename, offset);
+        if (typeof data === 'string') {
+            outputChannel.append(data);
+        } else {
+            await window.showErrorMessage(`Failed to read file ${filename}: ${data.message}`);
+            outputChannel.dispose();
+            return null;
         }
-
-        const watcher = workspace.createFileSystemWatcher(
-            new RelativePattern(Uri.file(dirname(filename)), basename(filename)),
-            false,
-            false,
-            false,
-        );
-
-        resource = {
-            outputChannel,
-            watcher,
-            emitter,
-            disposables: [],
-        };
-
-        watcher.onDidDelete(() => {
-            offset = 0;
-            output.appendLine(`*** File ${filename} has disappeared`);
-            maybeShowOutput(output, true);
-            process.nextTick(() => emitter?.emit('fileDeleted', filename));
-        }, null, resource.disposables);
-
-        watcher.onDidCreate(() => {
-            offset = 0;
-            process.nextTick(() => emitter?.emit('fileCreated', filename));
-        }, null, resource.disposables);
-
-        watcher.onDidChange(async () => {
-            let fd: FileHandle | undefined;
-            let stats: FileStat | null;
-            try {
-                [fd, stats] = await Promise.all([open(filename, 'r'), statFile(filename)]);
-
-                if (stats) {
-                    const buffer = Buffer.alloc(stats.size - offset);
-                    await fd.read(buffer, 0, buffer.length, offset);
-                    offset += buffer.length;
-                    output.append(buffer.toString('ascii'));
-                }
-            } catch (err) {
-                output.appendLine(`*** Failed to read file ${filename}: ${(err as Error).message}`);
-            } finally {
-                await fd?.close();
-            }
-
-            maybeShowOutput(output, true);
-            process.nextTick(() => emitter?.emit('fileChanged', filename));
-        }, null, resource.disposables);
-
-        addResource(filename, resource);
-    } else {
-        ({ outputChannel, emitter } = resource);
     }
 
+    const watcher = workspace.createFileSystemWatcher(
+        new RelativePattern(Uri.file(dirname(filename)), basename(filename)),
+        false,
+        false,
+        false,
+    );
+
+    const resource = {
+        outputChannel,
+        watcher,
+        emitter,
+        disposables: [],
+    };
+
+    watcher.onDidDelete(() => {
+        offset = 0;
+        output.appendLine(`*** File ${filename} has disappeared`);
+        maybeShowOutput(output, true);
+        process.nextTick(() => emitter?.emit('fileDeleted', filename));
+    }, null, resource.disposables);
+
+    watcher.onDidCreate(() => {
+        offset = 0;
+        process.nextTick(() => emitter?.emit('fileCreated', filename));
+    }, null, resource.disposables);
+
+    watcher.onDidChange(async () => {
+        let fd: FileHandle | undefined;
+        let stats: FileStat | null;
+        try {
+            [fd, stats] = await Promise.all([open(filename, 'r'), statFile(filename)]);
+
+            if (stats) {
+                const buffer = Buffer.alloc(stats.size - offset);
+                await fd.read(buffer, 0, buffer.length, offset);
+                offset += buffer.length;
+                output.append(buffer.toString('ascii'));
+            }
+        } catch (err) {
+            output.appendLine(`*** Failed to read file ${filename}: ${(err as Error).message}`);
+        } finally {
+            await fd?.close();
+        }
+
+        maybeShowOutput(output, true);
+        process.nextTick(() => emitter?.emit('fileChanged', filename));
+    }, null, resource.disposables);
+
+    addResource(filename, resource);
+    return resource;
+}
+
+async function doWatchFile(filename: string, quiet = false): Promise<EventEmitter | null> {
+    let resource = getResource(filename) ?? await setUpWatcher(filename);
+
+    if (!resource) {
+        return null;
+    }
+
+    const { outputChannel, emitter } = resource;
     if (!quiet) {
         maybeShowOutput(outputChannel);
     }
