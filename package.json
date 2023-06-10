@@ -2,7 +2,7 @@
   "name": "logwatcher",
   "publisher": "automattic",
   "displayName": "Log Watcher",
-  "description": "Log Watcher is an extension for VSCode to watch logs and display them in the \"Output\" tab, much like what \"tail -F\" does.",
+  "description": "A Visual Studio Code extension that watches log files for changes and outputs those changes to the \"Output\" tab in real time, similar to `tail -F`.",
   "version": "0.0.3",
   "preview": true,
   "keywords": [
