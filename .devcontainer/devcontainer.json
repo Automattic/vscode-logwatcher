@@ -1,0 +1,16 @@
+{
+	"name": "Node.js with TypeScript",
+	"image": "mcr.microsoft.com/devcontainers/typescript-node:0-16",
+	"postCreateCommand": "npm i",
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"zhiayang.tabindentspacealign",
+				"christian-kohler.npm-intellisense",
+				"esbenp.prettier-vscode",
+				"pmneo.tsimporter",
+				"dbaeumer.vscode-eslint"
+			]
+		}
+	}
+}
