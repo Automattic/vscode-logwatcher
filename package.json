@@ -3,7 +3,7 @@
   "publisher": "automattic",
   "displayName": "Log Watcher",
   "description": "A Visual Studio Code extension that watches log files for changes and outputs those changes to the \"Output\" tab in real time, similar to `tail -F`.",
-  "version": "0.0.3",
+  "version": "1.0.0",
   "keywords": [
     "logs",
     "log watcher",
