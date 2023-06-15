@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [1.0.0](https://github.com/Automattic/vscode-logwatcher/releases/tag/v1.0.0)
+
+* First official release
+
 ## [0.0.3](https://github.com/Automattic/vscode-logwatcher/releases/tag/v0.0.3)
 
 * Add an option to set the list of the files to watch on startup.
