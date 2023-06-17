@@ -2,6 +2,7 @@
 
 [![CI](https://github.com/Automattic/vscode-logwatcher/actions/workflows/ci.yml/badge.svg)](https://github.com/Automattic/vscode-logwatcher/actions/workflows/ci.yml)
 [![Dependency Review](https://github.com/Automattic/vscode-logwatcher/actions/workflows/dependency-review.yml/badge.svg)](https://github.com/Automattic/vscode-logwatcher/actions/workflows/dependency-review.yml)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=Automattic_vscode-logwatcher&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=Automattic_vscode-logwatcher)
 
 A Visual Studio Code extension that watches log files for changes and outputs those changes to the "Output" tab in real time, similar to `tail -F`. 
 
