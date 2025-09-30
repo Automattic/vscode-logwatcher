@@ -21,10 +21,8 @@ const waitForVisibleRangesChange = (editor: TextEditor): Promise<void> =>
 
 const promisifiedWrite = (stream: WriteStream, data: string | Buffer): Promise<void> => new Promise((resolve) => stream.end(data, resolve));
 const nextTick = (): Promise<void> => new Promise((resolve) => process.nextTick(resolve));
-const delayForWinGHA = async (ms = 1000): Promise<void> => {
-    if (platform() === 'win32' && process.env.GITHUB_ACTIONS === 'true') {
-        await setTimeout(ms);
-    }
+const delay = async (): Promise<void> => {
+    await setTimeout(platform() === 'win32' ? 1000 : 200);
 };
 
 suite('WatchFileCommand', function () {
@@ -69,7 +67,7 @@ suite('WatchFileCommand', function () {
         notEqual(editor, undefined);
         notEqual(emitter, undefined);
 
-        await delayForWinGHA();
+        await delay();
         await Promise.all([once(emitter, 'fileCreated'), writeFile(fname, '')]);
     });
 
@@ -85,7 +83,7 @@ suite('WatchFileCommand', function () {
         notEqual(editor, undefined);
         notEqual(emitter, undefined);
 
-        await delayForWinGHA();
+        await delay();
 
         const expectedContent = `this is a text${EOL}`;
         await Promise.all([
@@ -111,7 +109,7 @@ suite('WatchFileCommand', function () {
         notEqual(editor, undefined);
         notEqual(emitter, undefined);
 
-        await delayForWinGHA();
+        await delay();
         await Promise.all([waitForVisibleRangesChange(editor), once(emitter, 'fileDeleted'), unlink(fname)]);
 
         const actual = editor.document.getText();
@@ -137,7 +135,7 @@ suite('WatchFileCommand', function () {
             await waitForVisibleRangesChange(editor);
         }
 
-        const actual = editor.document.getText();
+        const actual = editor.document.getText().replace(/\r\n/gu, '\n');
         equal(actual, expectedContent);
     });
 
@@ -160,7 +158,7 @@ suite('WatchFileCommand', function () {
             await waitForVisibleRangesChange(editor);
         }
 
-        const actual = editor.document.getText();
+        const actual = editor.document.getText().replace(/\r\n/gu, '\n');
         equal(actual, expectedContent);
     });
 
