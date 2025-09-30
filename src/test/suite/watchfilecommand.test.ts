@@ -135,7 +135,7 @@ suite('WatchFileCommand', function () {
             await waitForVisibleRangesChange(editor);
         }
 
-        const actual = editor.document.getText();
+        const actual = editor.document.getText().replace(/\r\n/gu, '\n');
         equal(actual, expectedContent);
     });
 
@@ -158,7 +158,7 @@ suite('WatchFileCommand', function () {
             await waitForVisibleRangesChange(editor);
         }
 
-        const actual = editor.document.getText();
+        const actual = editor.document.getText().replace(/\r\n/gu, '\n');
         equal(actual, expectedContent);
     });
 
