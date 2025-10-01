@@ -3,8 +3,10 @@ import { basename, join } from 'node:path';
 import { EventEmitter } from 'node:events';
 import { RelativePattern, Uri, window, workspace } from 'vscode';
 import { Resource, addResource, freeAllResources, freeResource, getFilenames, getResource } from '../../resources';
+import { waitForOutputWindow } from './utils';
 
-function createResource(filename: string): Resource {
+async function createResource(filename: string): Promise<Resource> {
+    const promise = waitForOutputWindow(`extension-output-`);
     const outputChannel = window.createOutputChannel(filename, 'log');
     const watcher = workspace.createFileSystemWatcher(
         new RelativePattern(Uri.file(filename), basename(filename)),
@@ -14,6 +16,8 @@ function createResource(filename: string): Resource {
     );
     const emitter = new EventEmitter();
 
+    outputChannel.show(true);
+    await promise;
     return { outputChannel, watcher, emitter, disposables: [] };
 }
 
@@ -22,9 +26,9 @@ suite('Resources', function () {
         freeAllResources();
     });
 
-    test('addResource', function () {
+    test('addResource', async function () {
         const filename = __filename;
-        const r = createResource(filename);
+        const r = await createResource(filename);
 
         const added = addResource(filename, r);
         equal(added, true);
@@ -33,11 +37,11 @@ suite('Resources', function () {
         deepEqual(resource, r);
     });
 
-    test('freeResource', function () {
+    test('freeResource', async function () {
         let resource;
         const filename = __filename;
 
-        const added = addResource(filename, createResource(filename));
+        const added = addResource(filename, await createResource(filename));
         equal(added, true);
 
         resource = getResource(filename);
@@ -49,15 +53,15 @@ suite('Resources', function () {
         equal(resource, undefined);
     });
 
-    test('freeAllResources', function () {
+    test('freeAllResources', async function () {
         let resource;
         let added;
         const filename1 = __filename;
         const filename2 = join(__dirname, 'index.js');
 
-        added = addResource(filename1, createResource(filename1));
+        added = addResource(filename1, await createResource(filename1));
         equal(added, true);
-        added = addResource(filename2, createResource(filename2));
+        added = addResource(filename2, await createResource(filename2));
         equal(added, true);
 
         resource = getResource(filename1);
@@ -73,14 +77,14 @@ suite('Resources', function () {
         equal(resource, undefined);
     });
 
-    test('getFilenames', function () {
+    test('getFilenames', async function () {
         let added;
         const filename1 = __filename;
         const filename2 = join(__dirname, 'index.js');
 
-        added = addResource(filename1, createResource(filename1));
+        added = addResource(filename1, await createResource(filename1));
         equal(added, true);
-        added = addResource(filename2, createResource(filename2));
+        added = addResource(filename2, await createResource(filename2));
         equal(added, true);
 
         const expected = [filename1, filename2];
