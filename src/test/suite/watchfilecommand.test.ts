@@ -21,9 +21,7 @@ const waitForVisibleRangesChange = (editor: TextEditor): Promise<void> =>
 
 const promisifiedWrite = (stream: WriteStream, data: string | Buffer): Promise<void> => new Promise((resolve) => stream.end(data, resolve));
 const nextTick = (): Promise<void> => new Promise((resolve) => process.nextTick(resolve));
-const delay = async (): Promise<void> => {
-    await setTimeout(platform() === 'win32' ? 1000 : 50);
-};
+const delay = (): Promise<unknown> => setTimeout(platform() === 'win32' ? 1000 : 50);
 
 suite('WatchFileCommand', function () {
     let tmpDir: string;
@@ -164,8 +162,16 @@ suite('WatchFileCommand', function () {
     test('reuse existing output channel', async function () {
         const filename = __filename;
 
-        await commands.executeCommand('logwatcher.watchFile', filename);
-        await commands.executeCommand('logwatcher.watchFile', filename);
+        const [_, emitter1] = await Promise.all([
+            waitForOutputWindow(`extension-output-`),
+            commands.executeCommand<EventEmitter>('logwatcher.watchFile', filename),
+        ]);
+
+        const emitter2 = await commands.executeCommand<EventEmitter>('logwatcher.watchFile', filename);
+
+        equal(emitter1 === emitter2, true);
+        notEqual(emitter1, null);
+        notEqual(emitter2, null);
 
         const expected = [filename];
         const actual = getFilenames();

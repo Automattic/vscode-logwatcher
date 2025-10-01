@@ -23,10 +23,7 @@ function doFreeResource(resource: Resource): void {
     resource.disposables.forEach((disposable) => disposable.dispose());
     resource.emitter.removeAllListeners();
     resource.watcher.dispose();
-    // See https://github.com/microsoft/vscode/issues/232559
-    if (process.env.NODE_ENV !== 'test') {
-        resource.outputChannel.dispose();
-    }
+    resource.outputChannel.dispose();
 }
 
 export function freeResource(path: string): void {
