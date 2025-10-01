@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-## [1.0.1](https://github.com/Automattic/vscode-logwatcher/releases/tag/v1.0.0)
+## [1.0.1](https://github.com/Automattic/vscode-logwatcher/releases/tag/v1.0.1)
 
 * Properly handle file truncation
 
