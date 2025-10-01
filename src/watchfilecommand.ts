@@ -109,13 +109,23 @@ async function setUpWatcher(filename: string): Promise<Resource | null> {
         let fd: FileHandle | undefined;
         let stats: FileStat | null;
         try {
-            [fd, stats] = await Promise.all([open(filename, 'r'), statFile(filename)]);
-
+            stats = await statFile(filename);
             if (stats) {
-                const buffer = Buffer.alloc(stats.size - offset);
-                await fd.read(buffer, 0, buffer.length, offset);
-                offset += buffer.length;
-                outputChannel.append(buffer.toString('ascii'));
+                if (stats.size - offset > 0) {
+                    fd = await open(filename, 'r');
+                    const buffer = Buffer.alloc(stats.size - offset);
+                    await fd.read(buffer, 0, buffer.length, offset);
+                    offset += buffer.length;
+                    outputChannel.append(buffer.toString('ascii'));
+                } else {
+                    offset = stats.size;
+                    const data = await readInitialData(filename, offset);
+                    if (typeof data === 'string') {
+                        outputChannel.append(data);
+                    } else {
+                        throw data;
+                    }
+                }
             }
         } catch (err) {
             outputChannel.appendLine(`*** Failed to read file ${filename}: ${(err as Error).message}`);
