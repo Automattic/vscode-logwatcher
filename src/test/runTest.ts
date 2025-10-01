@@ -11,6 +11,7 @@ async function main(): Promise<void> {
         // Passed to --extensionTestsPath
         const extensionTestsPath = resolve(__dirname, './suite/index');
 
+        process.env.NODE_ENV = 'test';
         // Download VS Code, unzip it and run the integration test
         await runTests({
             extensionDevelopmentPath,

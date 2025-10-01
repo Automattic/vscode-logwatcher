@@ -5,7 +5,7 @@ import { RelativePattern, Uri, window, workspace } from 'vscode';
 import { Resource, addResource, freeAllResources, freeResource, getFilenames, getResource } from '../../resources';
 
 function createResource(filename: string): Resource {
-    const outputChannel = window.createOutputChannel(filename);
+    const outputChannel = window.createOutputChannel(filename, 'log');
     const watcher = workspace.createFileSystemWatcher(
         new RelativePattern(Uri.file(filename), basename(filename)),
         false,
@@ -14,7 +14,7 @@ function createResource(filename: string): Resource {
     );
     const emitter = new EventEmitter();
 
-    return { outputChannel, watcher, emitter };
+    return { outputChannel, watcher, emitter, disposables: [] };
 }
 
 suite('Resources', function () {
