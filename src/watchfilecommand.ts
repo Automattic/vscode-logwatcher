@@ -65,7 +65,6 @@ function maybeShowOutput(outputChannel: OutputChannel, preserveFocus?: boolean |
 async function setUpWatcher(filename: string): Promise<Resource | null> {
     const emitter = new EventEmitter();
     const outputChannel = window.createOutputChannel(`Watch ${filename}`, 'log');
-    const output = outputChannel;
     const stats = await statFile(filename);
     let offset = stats?.size ?? 0;
 
@@ -96,14 +95,14 @@ async function setUpWatcher(filename: string): Promise<Resource | null> {
 
     watcher.onDidDelete(() => {
         offset = 0;
-        output.appendLine(`*** File ${filename} has disappeared`);
-        maybeShowOutput(output, true);
-        process.nextTick(() => emitter?.emit('fileDeleted', filename));
+        outputChannel.appendLine(`*** File ${filename} has disappeared`);
+        maybeShowOutput(outputChannel, true);
+        process.nextTick(() => emitter.emit('fileDeleted', filename));
     }, null, resource.disposables);
 
     watcher.onDidCreate(() => {
         offset = 0;
-        process.nextTick(() => emitter?.emit('fileCreated', filename));
+        process.nextTick(() => emitter.emit('fileCreated', filename));
     }, null, resource.disposables);
 
     watcher.onDidChange(async () => {
@@ -116,16 +115,16 @@ async function setUpWatcher(filename: string): Promise<Resource | null> {
                 const buffer = Buffer.alloc(stats.size - offset);
                 await fd.read(buffer, 0, buffer.length, offset);
                 offset += buffer.length;
-                output.append(buffer.toString('ascii'));
+                outputChannel.append(buffer.toString('ascii'));
             }
         } catch (err) {
-            output.appendLine(`*** Failed to read file ${filename}: ${(err as Error).message}`);
+            outputChannel.appendLine(`*** Failed to read file ${filename}: ${(err as Error).message}`);
         } finally {
             await fd?.close();
         }
 
-        maybeShowOutput(output, true);
-        process.nextTick(() => emitter?.emit('fileChanged', filename));
+        maybeShowOutput(outputChannel, true);
+        process.nextTick(() => emitter.emit('fileChanged', filename));
     }, null, resource.disposables);
 
     addResource(filename, resource);

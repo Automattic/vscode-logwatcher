@@ -5,7 +5,7 @@ export interface Resource {
     outputChannel: OutputChannel;
     watcher: FileSystemWatcher;
     emitter: EventEmitter;
-    disposables?: Disposable[];
+    disposables: Disposable[];
 }
 
 const resources = new Map<string, Resource>();
@@ -20,13 +20,13 @@ export function addResource(path: string, resource: Resource): boolean {
 }
 
 function doFreeResource(resource: Resource): void {
-    if (resource.disposables) {
-        resource.disposables.forEach((disposable) => disposable.dispose());
-    }
-
-    resource.outputChannel.dispose();
-    resource.watcher.dispose();
+    resource.disposables.forEach((disposable) => disposable.dispose());
     resource.emitter.removeAllListeners();
+    resource.watcher.dispose();
+    // See https://github.com/microsoft/vscode/issues/232559
+    if (process.env.NODE_ENV !== 'test') {
+        resource.outputChannel.dispose();
+    }
 }
 
 export function freeResource(path: string): void {
