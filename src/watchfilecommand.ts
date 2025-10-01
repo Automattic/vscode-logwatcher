@@ -32,14 +32,14 @@ async function readInitialData(filename: string, size: number): Promise<string |
     let data: string;
     let fd: FileHandle | undefined;
     try {
-        const buffer = Buffer.alloc(size < READ_BUFFER_SIZE ? size : READ_BUFFER_SIZE);
+        const buffer = Buffer.alloc(Math.min(size, READ_BUFFER_SIZE));
         fd = await open(filename, 'r');
         await fd.read(buffer, 0, buffer.length, size - buffer.length);
         data = buffer.toString('ascii');
 
         const lines = data.split('\n');
         // If the file ends with a new line, the last line is empty, so we need to amend the number of lines
-        const amendment = lines[lines.length - 1].length > 0 ? 0 : 1;
+        const amendment = lines.at(-1)!.length > 0 ? 0 : 1;
         if (lines.length <= NUMBER_OF_LINES + amendment) {
             // If file size is greater than the size of the buffer, we may need to throw away the first line
             // because it may be incomplete
@@ -142,7 +142,7 @@ async function setUpWatcher(filename: string): Promise<Resource | null> {
 }
 
 async function doWatchFile(filename: string, quiet = false): Promise<EventEmitter | null> {
-    let resource = getResource(filename) ?? await setUpWatcher(filename);
+    const resource = getResource(filename) ?? await setUpWatcher(filename);
 
     if (!resource) {
         return null;
@@ -157,10 +157,7 @@ async function doWatchFile(filename: string, quiet = false): Promise<EventEmitte
 }
 
 export async function watchFileCommandHandler(filename?: string, quiet = false): Promise<unknown> {
-    if (typeof filename === 'undefined') {
-        filename = await getFileToWatch();
-    }
-
+    filename ??= await getFileToWatch();
     return filename ? doWatchFile(filename, quiet) : null;
 }
 
