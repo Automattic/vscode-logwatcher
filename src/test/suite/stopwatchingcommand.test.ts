@@ -1,9 +1,13 @@
-import { equal, notEqual } from 'node:assert';
+import { equal, notEqual } from 'node:assert/strict';
 import { commands } from 'vscode';
 import { waitForOutputWindow } from './utils';
-import { getFilenames } from '../../resources';
+import { freeAllResources, getFilenames } from '../../resources';
 
 suite('StopWatchingCommand', function () {
+    this.afterEach(function () {
+        freeAllResources();
+    });
+
     test('cancel effect of watchFileCommand', async function () {
         const filename = __filename;
 
