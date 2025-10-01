@@ -1,4 +1,4 @@
-import { deepEqual, equal, match, notEqual } from 'node:assert';
+import { deepEqual, equal, match, notEqual } from 'node:assert/strict';
 import { EventEmitter, once } from 'node:events';
 import { WriteStream, createWriteStream } from 'node:fs';
 import { mkdtemp, rm, unlink, writeFile } from 'node:fs/promises';
@@ -44,7 +44,7 @@ suite('WatchFileCommand', function () {
 
     this.timeout('win32' === platform() ? 20000 : 2000);
 
-    test('watchFileCommandHandler - smoke test', async function () {
+    test('smoke test', async function () {
         const filename = __filename;
 
         const [editor] = await Promise.all([
@@ -56,7 +56,7 @@ suite('WatchFileCommand', function () {
         match(editor?.document.fileName ?? '', new RegExp(`Watch ${filename.replace(/\\/gu, '\\\\')}$`, 'u'));
     });
 
-    test('watchFileCommandHandler - react to file creation', async function () {
+    test('react to file creation', async function () {
         const fname = join(tmpDir, '0001.txt');
 
         const [editor, emitter] = await Promise.all([
@@ -71,7 +71,7 @@ suite('WatchFileCommand', function () {
         await Promise.all([once(emitter, 'fileCreated'), writeFile(fname, '')]);
     });
 
-    test('watchFileCommandHandler - react to file modification', async function () {
+    test('react to file modification', async function () {
         const fname = join(tmpDir, '0002.txt');
 
         const stream = createWriteStream(fname);
@@ -96,7 +96,7 @@ suite('WatchFileCommand', function () {
         equal(actual, expectedContent);
     });
 
-    test('watchFileCommandHandler - react to file removal', async function () {
+    test('react to file removal', async function () {
         const fname = join(tmpDir, '0003.txt');
 
         await writeFile(fname, '');
@@ -117,7 +117,7 @@ suite('WatchFileCommand', function () {
         equal(actual, expected);
     });
 
-    test('watchFileCommandHandler - preload last 10 lines', async function () {
+    test('preload last 10 lines', async function () {
         const fname = join(tmpDir, '0004.txt');
 
         const expectedContent = '1\n2\n3\n4\n5\n6\n7\n8\n9\nA\n';
@@ -139,8 +139,7 @@ suite('WatchFileCommand', function () {
         equal(actual, expectedContent);
     });
 
-    test('watchFileCommandHandler - preload entire file if less than 10 lines', async function () {
-        tmpDir = await mkdtemp(join(tmpdir(), 'logwatcher-test-'));
+    test('preload entire file if less than 10 lines', async function () {
         const fname = join(tmpDir, '0005.txt');
 
         const expectedContent = '1\n2\n3\n';
@@ -162,7 +161,7 @@ suite('WatchFileCommand', function () {
         equal(actual, expectedContent);
     });
 
-    test('watchFileCommandHandler - reuse existing output channel', async function () {
+    test('reuse existing output channel', async function () {
         const filename = __filename;
 
         await commands.executeCommand('logwatcher.watchFile', filename);
