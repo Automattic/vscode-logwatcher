@@ -11,14 +11,6 @@ jobs:
     runs-on: ubuntu-latest
     name: Review Dependencies
     steps:
-      - name: Harden Runner
-        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a # v2.13.1
-        with:
-          egress-policy: block
-          allowed-endpoints: >
-            api.github.com:443
-            github.com:443
-
       - name: Check out the source code
         uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v4.1.0
 
