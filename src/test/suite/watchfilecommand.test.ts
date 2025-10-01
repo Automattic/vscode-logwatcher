@@ -22,7 +22,7 @@ const waitForVisibleRangesChange = (editor: TextEditor): Promise<void> =>
 const promisifiedWrite = (stream: WriteStream, data: string | Buffer): Promise<void> => new Promise((resolve) => stream.end(data, resolve));
 const nextTick = (): Promise<void> => new Promise((resolve) => process.nextTick(resolve));
 const delay = async (): Promise<void> => {
-    await setTimeout(platform() === 'win32' ? 1000 : 0);
+    await setTimeout(platform() === 'win32' ? 1000 : 50);
 };
 
 suite('WatchFileCommand', function () {
