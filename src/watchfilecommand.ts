@@ -111,7 +111,7 @@ async function setUpWatcher(filename: string): Promise<Resource | null> {
         try {
             stats = await statFile(filename);
             if (stats) {
-                if (stats.size - offset > 0) {
+                if (stats.size > offset) {
                     fd = await open(filename, 'r');
                     const buffer = Buffer.alloc(stats.size - offset);
                     await fd.read(buffer, 0, buffer.length, offset);
