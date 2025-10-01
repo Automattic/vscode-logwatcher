@@ -21,8 +21,8 @@
   },
   "homepage": "https://github.com/Automattic/vscode-logwatcher",
   "engines": {
-    "vscode": "^1.78.0",
-    "node": "^16.0.0"
+    "vscode": "^1.97.0",
+    "node": ">= 20.18.2"
   },
   "categories": [
     "Other"
@@ -85,7 +85,7 @@
   },
   "devDependencies": {
     "@types/mocha": "^10.0.10",
-    "@types/node": "^16.0.0",
+    "@types/node": "^20.18.2",
     "@types/vscode": "^1.78.0",
     "@typescript-eslint/eslint-plugin": "^5.60.0",
     "@typescript-eslint/parser": "^5.60.0",
