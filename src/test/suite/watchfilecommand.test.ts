@@ -1,7 +1,7 @@
 import { deepEqual, equal, match, notEqual } from 'node:assert/strict';
 import { EventEmitter, once } from 'node:events';
 import { WriteStream, createWriteStream } from 'node:fs';
-import { mkdtemp, rm, unlink, writeFile } from 'node:fs/promises';
+import { mkdtemp, rm, unlink, writeFile, truncate } from 'node:fs/promises';
 import { EOL, platform, tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { setTimeout } from 'node:timers/promises';
@@ -176,5 +176,42 @@ suite('WatchFileCommand', function () {
         const expected = [filename];
         const actual = getFilenames();
         deepEqual(actual, expected);
+    });
+
+
+    test('file truncation', async function () {
+        const fname = join(tmpDir, '0006.txt');
+
+        const expectedContent = '0123456789';
+        await writeFile(fname, expectedContent);
+
+        const [editor, emitter] = await Promise.all([
+            waitForOutputWindow(`extension-output-`),
+            commands.executeCommand<EventEmitter>('logwatcher.watchFile', fname),
+        ]);
+
+        notEqual(editor, undefined);
+        notEqual(emitter, undefined);
+
+        if (!editor.document.getText()) {
+            await waitForVisibleRangesChange(editor);
+        }
+
+        let actual = editor.document.getText();
+        equal(actual, expectedContent);
+
+        const waitForVisibleRangesChangePromise = waitForVisibleRangesChange(editor);
+        const onceFileChangedPromise = once(emitter, 'fileChanged');
+
+        const expectedSize = 5;
+        await truncate(fname, expectedSize);
+
+        await Promise.all([
+            waitForVisibleRangesChangePromise,
+            onceFileChangedPromise,
+        ]);
+
+        actual = editor.document.getText();
+        equal(actual, expectedContent + expectedContent.slice(0, expectedSize));
     });
 });
