@@ -20,7 +20,10 @@ export function addResource(path: string, resource: Resource): boolean {
 }
 
 function doFreeResource(resource: Resource): void {
-    resource.disposables.forEach((disposable) => disposable.dispose());
+    for (const disposable of resource.disposables) {
+        disposable.dispose();
+    }
+
     resource.emitter.removeAllListeners();
     resource.watcher.dispose();
     resource.outputChannel.dispose();
@@ -35,7 +38,10 @@ export function freeResource(path: string): void {
 }
 
 export function freeAllResources(): void {
-    resources.forEach(doFreeResource);
+    for (const resource of resources.values()) {
+        doFreeResource(resource);
+    }
+
     resources.clear();
 }
 
