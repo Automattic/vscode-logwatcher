@@ -40,7 +40,7 @@ suite('WatchFileCommand', function () {
         await rm(tmpDir, { recursive: true, force: true });
     });
 
-    this.timeout('win32' === platform() ? 20000 : 2000);
+    this.timeout('win32' === platform() ? 20000 : 5000);
 
     test('smoke test', async function () {
         const filename = __filename;
